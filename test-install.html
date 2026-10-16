@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ru"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="referrer" content="no-referrer"><meta name="theme-color" content="#f5f7fc">
+<title>Личный тест установки — Apple Inside Apps</title>
+<style>
+:root{--bg:#f5f7fc;--ink:#192438;--muted:#66758f;--blue:#2859f5;--line:#e1e9f5}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:var(--ink)}
+.wrap{max-width:700px;margin:auto;padding:20px 16px 60px}header{display:flex;justify-content:space-between;align-items:center;margin:6px 0 20px}
+header a{color:#4767a5;font-size:13px;text-decoration:none}header strong{font-size:19px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:20px;padding:23px}
+.title{font-size:27px;line-height:1.2;letter-spacing:-.7px;margin:14px 0 12px}
+p{font-size:13px;line-height:1.7;color:var(--muted)}
+.tag{font-weight:800;font-size:11px;color:#315eae;background:#ecf2ff;border-radius:8px;padding:8px 11px;display:inline-block}
+.stages{display:flex;gap:8px;margin:20px 0;align-items:stretch}
+.stages div{flex:1;border:1px solid var(--line);border-radius:10px;padding:10px 8px;font-size:11px;color:#6c7892;font-weight:800}
+.stages div.on{background:#eef3ff;border-color:#adc4ff;color:#2859f5}
+button,.btn{width:100%;border:0;border-radius:12px;background:var(--blue);color:white;padding:15px 18px;font-weight:800;font-size:14px;cursor:pointer;display:block;text-align:center;text-decoration:none;margin-top:11px}
+button.secondary,.btn.secondary{background:#eaf0fb;color:#315a9a}button:disabled{opacity:.6;cursor:not-allowed}
+.status{font-size:13px;background:#f4f7fc;color:#50617d;border-radius:12px;padding:15px;margin:16px 0;line-height:1.6}
+.status.warn{background:#fff5e7;color:#956b22}
+.status.ok{background:#eaf7ef;color:#23754c}
+.step[hidden]{display:none}
+ol{padding-left:21px;font-size:13px;line-height:1.9;color:#54647e}
+.note{font-size:12px;color:#78849a;margin-top:20px}
+@media(max-width:480px){.panel{padding:18px 16px}.stages div{font-size:10px;padding:9px 6px}}
+</style></head>
+<body><div class="wrap">
+<header><strong>Apple Inside Apps</strong><a href="/">← Каталог</a></header>
+<div class="panel">
+<span class="tag">ЛИЧНЫЙ ТЕСТ · БЕЗ ОПЛАТЫ</span>
+<h1 class="title">Установка СберБанк Онлайн</h1>
+<p>Проверяем путь клиента прямо на сайте. Эта страница предназначена только для теста на вашем устройстве и не является публичным предложением скачать приложение.</p>
+<div class="stages"><div id="p1" class="on">1. Ссылка</div><div id="p2">2. Установка</div><div id="p3">3. Активация</div></div>
+<div id="state" class="status" role="status">Нажмите «Получить кнопку установки».</div>
+<section id="step1" class="step">
+<button id="get-link">Получить кнопку установки</button>
+<p>Выдача возможна только по личной тестовой ссылке. Доступ истекает через 7 дней и ограничен числом проверок.</p>
+</section>
+<section id="step2" class="step" hidden>
+<a id="install-button" class="btn" href="#" rel="noreferrer">Установить на iPhone</a>
+<p>После нажатия Safari передаст команду установки iOS. Дождитесь появления приложения на рабочем столе. Если встроенный браузер не запускает установку, откройте эту страницу в Safari.</p>
+<button id="installed" class="secondary">Приложение появилось на iPhone</button>
+</section>
+<section id="step3" class="step" hidden>
+<h2>Проверка активации</h2>
+<p>В предыдущем тесте приложение установилось, но не открывалось до проверки Apple Account. Это действие выполняется вручную на iPhone.</p>
+<ol>
+<li>Откройте «Настройки» → ваше имя → «Контент и покупки».</li>
+<li>Проверьте, что используется ваша учётная запись, с которой приложение было законно получено.</li>
+<li>При необходимости подтвердите вход на доверенном устройстве.</li>
+<li>Откройте приложение и проверьте его работу.</li>
+</ol>
+<div class="status warn">Не вводите банковские реквизиты в IPA, пока не подтверждены его происхождение и безопасность. Никому не передавайте пароль Apple Account и коды подтверждения.</div>
+<button id="done">Приложение открылось — тест завершён</button>
+</section>
+<section id="step4" class="step" hidden>
+<h2>Тест завершён</h2><p>Вы проверили сайт → кнопку установки → запуск приложения → активацию. Оплата не выполнялась и статус реального заказа не изменялся.</p>
+<a class="btn secondary" href="/">Вернуться в каталог</a>
+</section>
+<p class="note">Программа размещена в тестовом хранилище. Подпись, происхождение и права на распространение файла не проверены. Тестовая ссылка не заменяет разрешения правообладателя для работы с клиентами.</p>
+</div></div>
+<script>
+(function(){
+"use strict";
+const endpoint="https://cmcfwkfhyxfljpowbkpj.supabase.co/functions/v1/apps-private-test";
+const el=id=>document.getElementById(id);
+let token="",busy=false;
+try{
+ const fragment=new URLSearchParams(location.hash.slice(1));
+ const hashToken=fragment.get("access");
+ if(hashToken&&/^[a-f0-9]{64}$/.test(hashToken)){token=hashToken;sessionStorage.setItem("ai_sber_private_test",token)}
+ else token=sessionStorage.getItem("ai_sber_private_test")||"";
+}catch(_){}
+function status(x,cls=""){el("state").className="status "+cls;el("state").textContent=x}
+function step(n){
+ [1,2,3,4].forEach(i=>el("step"+i).hidden=i!==n);
+ [1,2,3].forEach(i=>el("p"+i).className=i===Math.min(n,3)?"on":"");
+}
+if(!/^[a-f0-9]{64}$/.test(token)){status("Личный тестовый доступ отсутствует. Откройте персональную ссылку Apple Inside Apps.","warn");el("get-link").disabled=true}
+el("get-link").onclick=async()=>{
+ if(busy||!token)return;
+ busy=true;el("get-link").disabled=true;status("Проверяем тестовый доступ…");
+ try{
+  const res=await fetch(endpoint,{
+   method:"POST",headers:{"Content-Type":"application/json"},cache:"no-store",
+   body:JSON.stringify({access_token:token,app_slug:"sber"})
+  });
+  const data=await res.json();
+  if(!res.ok||!data.ok||typeof data.install_url!=="string"||!data.install_url.startsWith("itms-services://")){
+   throw new Error(res.status===403?"Тестовый доступ закончился.":"Ссылка пока недоступна. Попробуйте снова.");
+  }
+  el("install-button").setAttribute("href",data.install_url);
+  step(2);
+  status("Кнопка готова. Нажмите «Установить на iPhone».","ok");
+ }catch(e){status(e.message,"warn");el("get-link").disabled=false}
+ finally{busy=false}
+};
+el("installed").onclick=()=>{step(3);status("Установка отмечена. Теперь проверьте активацию.")};
+el("done").onclick=()=>{step(4);status("Тест завершён.","ok")};
+})();
+</script></body></html>
