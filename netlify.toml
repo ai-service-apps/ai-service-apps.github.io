@@ -1,0 +1,21 @@
+# Apple Inside Apps — Netlify deployment.
+# Publish only static HTML, keep webhook source outside public output.
+[build]
+  command = "mkdir -p dist && cp ./*.html dist/ && cp ./anypay-verification.txt dist/"
+  publish = "dist"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/api/anypay"
+  to = "/.netlify/functions/anypay"
+  status = 200
+  force = true
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
