@@ -1,0 +1,129 @@
+<!DOCTYPE html><html lang="ru"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f5f7fc"><meta name="referrer" content="no-referrer">
+<title>Установка приложения — Apple Inside Apps</title>
+<style>
+:root{--bg:#f5f7fc;--ink:#192438;--muted:#697990;--blue:#2859f5;--line:#e2e8f3}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+header,main,footer{max-width:680px;margin:auto;padding-left:18px;padding-right:18px}
+header{padding-top:25px;padding-bottom:25px;display:flex;justify-content:space-between;align-items:center}
+.brand{text-decoration:none;color:var(--ink);font-size:19px;font-weight:850}.brand span{color:#4773e6}
+header a:last-child{font-size:12px;color:#4968a0}
+.panel{background:#fff;border:1px solid var(--line);border-radius:21px;padding:24px;margin-bottom:15px}
+h1{font-size:27px;letter-spacing:-.5px;margin:0 0 9px}h2{font-size:18px;margin:20px 0 10px}
+p{font-size:13px;line-height:1.7;color:var(--muted)}.status{display:block;background:#fff6e8;color:#906b2d;border-radius:9px;padding:10px 12px;font-size:12px;margin:13px 0}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:22px 0}.steps>div{border:1px solid var(--line);border-radius:12px;padding:11px;min-width:0;font-size:11px;font-weight:750}.steps span{display:block;color:#748bb6;font-size:10px;margin-bottom:6px}.steps .current{background:#eaf0ff;border-color:#abc1ff}
+.item{border:1px solid var(--line);border-radius:13px;padding:15px;margin:10px 0;display:flex;flex-direction:column;gap:10px}
+.item b{font-size:14px}.item small{color:var(--muted);font-size:12px}.button{display:block;width:100%;text-align:center;text-decoration:none;border:0;background:var(--blue);color:#fff;padding:13px 16px;border-radius:12px;font-weight:750;font-size:13px;cursor:pointer}
+.button.secondary{background:#edf2fc;color:#2859a6}.button:disabled{background:#b1c0df;cursor:not-allowed}
+.flow{display:none}.flow.active{display:block}
+.note{background:#f2f5fd;padding:14px;border-radius:12px;font-size:12px;line-height:1.6;color:#5b6d87;margin-top:14px}
+ol{font-size:13px;line-height:1.8;padding-left:23px}footer{font-size:11px;color:#8b96aa;padding-bottom:35px}footer a{color:#5371ac}
+@media(max-width:450px){.panel{padding:20px 16px}.steps>div{font-size:10px;padding:9px 7px}}
+</style></head><body>
+<header><a href="./" class="brand">Apple Inside <span>Apps</span></a><a href="contacts.html">Поддержка ↗</a></header>
+<main>
+<div class="panel">
+<h1>Ваши приложения</h1>
+<p>После оплаты здесь автоматически становятся доступны разрешённые установочные файлы. Процесс проходит без переписки с менеджером.</p>
+<div class="steps" id="steps"><div class="current"><span>01</span>Проверка оплаты</div><div><span>02</span>Установка</div><div><span>03</span>Активация</div></div>
+<div id="message" class="status" role="status">Проверяем доступ к заказу…</div>
+<div id="waiting" class="flow active">
+<p>Если оплата ещё не подтверждена, кнопки установки не появятся. Не нужно оплачивать заказ повторно до проверки статуса.</p>
+<button id="refresh" class="button secondary" type="button">Проверить статус</button>
+</div>
+<section id="installation" class="flow">
+<h2>Шаг 1. Установка</h2>
+<p>Нажмите «Установить» рядом с каждым приложением на iPhone. После завершения отметьте установку.</p>
+<div id="app-items"></div>
+<button id="next" class="button" disabled type="button">Продолжить к активации</button>
+</section>
+<section id="activation" class="flow">
+<h2>Шаг 2. Активация</h2>
+<p>При необходимости активируйте приложение на iPhone. Не передавайте пароль Apple Account и коды подтверждения другим людям.</p>
+<ol><li>Откройте «Настройки» → ваше имя → «Контент и покупки».</li><li>Используйте только учётную запись, на вход в которую у вас есть право.</li><li>Подтвердите вход на доверенном устройстве, если iPhone запросит код.</li><li>Откройте установленное приложение и проверьте работу.</li></ol>
+<div class="note">Ввод Apple Account нельзя автоматизировать через сайт. Сервис не передаёт и не хранит пароли либо коды двухфакторного подтверждения.</div>
+<button id="finish" class="button" type="button">Все приложения работают — завершить</button>
+</section>
+<section id="done" class="flow"><h2>Готово</h2><p>Вы подтвердили завершение установки и проверку приложений.</p><a href="./" class="button secondary">Вернуться в каталог</a></section>
+<div class="note">Выдача работает только после проверки платежа и разрешённого способа распространения каждого приложения. Проект пока готовится к запуску; реальные платежи отключены.</div>
+</div>
+</main><footer>Apple Inside Apps · <a href="terms.html">Условия</a> · <a href="privacy.html">Обработка данных</a> · <a href="contacts.html">Контакты</a></footer>
+<script>
+(function(){
+"use strict";
+const endpoint="https://cmcfwkfhyxfljpowbkpj.supabase.co/functions/v1/apps-delivery";
+const get=id=>document.getElementById(id);
+let token="",order=null,apps=[],view="waiting",busy=false;
+try{
+ const h=new URLSearchParams(window.location.hash.replace(/^#/,""));
+ token=h.get("access")||sessionStorage.getItem("ai_apps_access")||"";
+ if(/^[a-f0-9]{64}$/i.test(token))sessionStorage.setItem("ai_apps_access",token);
+ else token="";
+ if(window.location.hash)history.replaceState(null,"",window.location.pathname);
+}catch(_){token=""}
+const esc=x=>String(x).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function show(status){
+ view=status;
+ ["waiting","installation","activation","done"].forEach(x=>get(x).classList.toggle("active",x===status));
+ const active=status==="waiting"?0:status==="installation"?1:2;
+ Array.from(get("steps").children).forEach((x,i)=>x.classList.toggle("current",i===active));
+}
+async function call(action,extra={}){
+ if(!token)throw Error("Отсутствует действующая персональная ссылка заказа.");
+ const response=await fetch(endpoint,{
+   method:"POST",cache:"no-store",headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({action,access_token:token,...extra})
+ });
+ const result=await response.json().catch(()=>({}));
+ if(!response.ok||!result.ok)throw Error(
+   response.status===404?"Ссылка заказа недействительна или срок её действия истёк.":
+   "Статус пока недоступен. Повторите проверку позднее.");
+ return result;
+}
+function render(){
+ if(!order)return;
+ if(order.status==="completed"){get("message").textContent="Заказ завершён";show("done");return}
+ if(!["paid","installing"].includes(order.status)){
+   get("message").textContent="Оплата не подтверждена. Установка недоступна.";
+   show("waiting");return;
+ }
+ if(!apps.length||apps.some(x=>!x.download_available)){
+   get("message").textContent="Ожидаем проверки установочных файлов. Доступ пока закрыт.";
+   show("waiting");return;
+ }
+ get("message").textContent="Доступ к установке подтверждён.";
+ get("app-items").innerHTML=apps.map(a=>
+  '<div class="item"><b>'+esc(a.title)+'</b><small>'+(a.installed?'Вы отметили установку':'Установите приложение на iPhone')+'</small>'+
+  (a.install_url&&!a.installed?'<a class="button" href="'+esc(a.install_url)+'">Установить на iPhone</a>':'')+
+  '<button class="button secondary" type="button" data-installed="'+esc(a.id)+'"'+(a.installed?' disabled':'')+'>'+
+  (a.installed?'✓ Установлено':'Приложение установлено')+'</button></div>'
+ ).join("");
+ get("next").disabled=apps.some(x=>!x.installed);
+ Array.from(document.querySelectorAll("[data-installed]")).forEach(b=>b.onclick=async()=>{
+   if(busy)return;busy=true;b.disabled=true;
+   try{const result=await call("mark_installed",{app_id:b.dataset.installed});order=result.order;apps=result.apps;render()}
+   catch(e){get("message").textContent=e.message}finally{busy=false}
+ });
+ show(apps.every(x=>x.installed)&&view==="activation"?"activation":"installation");
+}
+async function refresh(){
+ if(busy)return;busy=true;
+ get("refresh").disabled=true;
+ try{const result=await call("status");order=result.order;apps=result.apps;render()}
+ catch(e){get("message").textContent=e.message;show("waiting")}
+ finally{busy=false;get("refresh").disabled=false}
+}
+get("refresh").onclick=refresh;
+get("next").onclick=()=>{
+ if(!get("next").disabled&&apps.every(x=>x.installed))show("activation");
+};
+get("finish").onclick=async()=>{
+ if(busy)return;busy=true;get("finish").disabled=true;
+ try{const result=await call("complete");order=result.order;apps=result.apps;render()}
+ catch(e){get("message").textContent=e.message}finally{busy=false;get("finish").disabled=false}
+};
+if(!token)get("message").textContent="Персональный доступ к заказу отсутствует. На этапе подготовки оплаты установку открыть нельзя.";
+else refresh();
+})();
+</script></body></html>
