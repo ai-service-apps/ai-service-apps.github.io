@@ -1,0 +1,4 @@
+# Apple Inside Apps same-domain proxy routes (Netlify).
+# Supabase remains source of truth. Callback is fail-closed; payments disabled.
+/api/catalog https://cmcfwkfhyxfljpowbkpj.supabase.co/functions/v1/apps-orders 200!
+/api/anypay https://cmcfwkfhyxfljpowbkpj.supabase.co/functions/v1/ap 200!
