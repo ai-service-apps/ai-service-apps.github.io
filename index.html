@@ -294,15 +294,31 @@ el("back-shop").onclick=()=>{
   window.scrollTo({top:0,behavior:"smooth"});
 };
 async function load(){
+  let usedBackup=false;
   try{
-    const r=await fetch(api,{cache:"no-store"});
-    if(!r.ok)throw Error("CATALOG_UNAVAILABLE");
+    const r=await fetch(api,{cache:"no-store",signal:AbortSignal.timeout(6500)});
+    if(!r.ok)throw Error("CATALOG_API_UNAVAILABLE");
     const j=await r.json();
-    if(!j.ok||!Array.isArray(j.apps))throw Error("CATALOG_UNAVAILABLE");
+    if(!j.ok||!Array.isArray(j.apps)||j.apps.length===0)throw Error("CATALOG_API_INVALID");
     catalog=j.apps.filter(a=>a.slug!=="other"&&typeof a.slug==="string"&&typeof a.title==="string");
   }catch(_){
-    catalog=[];
-    el("payment-warning").textContent="Не удалось загрузить каталог. Оплата отключена. Повторите попытку позже.";
+    // Netlify deployment may be reachable before its functions are fully live.
+    // This static copy mirrors public database fields only: prices and titles, no IPA links.
+    if(location.hostname.endsWith(".netlify.app")){
+      try{
+        const r=await fetch("/catalog-fallback.json",{cache:"no-store"});
+        if(!r.ok)throw Error("BACKUP_NOT_FOUND");
+        const j=await r.json();
+        if(!j.ok||!Array.isArray(j.apps))throw Error("BACKUP_INVALID");
+        catalog=j.apps.filter(a=>a.slug!=="other"&&typeof a.slug==="string"&&typeof a.title==="string");
+        usedBackup=true;
+      }catch(__){catalog=[]}
+    }else catalog=[];
+  }
+  if(usedBackup){
+    el("payment-warning").textContent="Показан резервный каталог. Цены справочные; оплата и установка пока отключены.";
+  }else if(!catalog.length){
+    el("payment-warning").textContent="Не удалось загрузить каталог. Оплата отключена. Попробуйте позже.";
   }
   renderCatalog();
 }
