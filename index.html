@@ -177,7 +177,7 @@ footer a{color:#5371ac;text-decoration:none}
 <script>
 (function(){
 "use strict";
-const api="https://cmcfwkfhyxfljpowbkpj.supabase.co/functions/v1/apps-orders";
+const api=location.hostname.endsWith(".netlify.app")?"/api/catalog":"https://cmcfwkfhyxfljpowbkpj.supabase.co/functions/v1/apps-orders";
 const catalogEl=document.getElementById("catalog");
 const selections=new Set();
 const simulatedInstalled=new Set();
