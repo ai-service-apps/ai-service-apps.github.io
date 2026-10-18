@@ -9,6 +9,12 @@
   node_bundler = "esbuild"
 
 [[redirects]]
+  from = "/api/catalog"
+  to = "/.netlify/functions/catalog"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/api/anypay"
   to = "/.netlify/functions/anypay"
   status = 200
