@@ -1,0 +1,27 @@
+{
+  "ok": true,
+  "source": "static_snapshot",
+  "apps": [
+    {
+      "slug": "alfa",
+      "title": "Альфа-Банк",
+      "description": "Доступность и версия уточняются",
+      "price_rub": 500,
+      "is_available": false
+    },
+    {
+      "slug": "sber",
+      "title": "СберБанк Онлайн",
+      "description": "Установка банковского приложения на iPhone",
+      "price_rub": 500,
+      "is_available": false
+    },
+    {
+      "slug": "tbank",
+      "title": "Т-Банк",
+      "description": "Доступность и версия уточняются",
+      "price_rub": 500,
+      "is_available": false
+    }
+  ]
+}
