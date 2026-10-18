@@ -1,7 +1,7 @@
 # Apple Inside Apps — Netlify deployment.
 # Publish only static HTML, keep webhook source outside public output.
 [build]
-  command = "mkdir -p dist && cp ./*.html dist/ && cp ./anypay-verification.txt ./catalog-fallback.json dist/"
+  command = "mkdir -p dist && cp ./*.html dist/ && cp ./anypay-verification.txt ./catalog-fallback.json ./_redirects dist/"
   publish = "dist"
   functions = "netlify/functions"
 
@@ -10,13 +10,13 @@
 
 [[redirects]]
   from = "/api/catalog"
-  to = "/.netlify/functions/catalog"
+  to = "https://cmcfwkfhyxfljpowbkpj.supabase.co/functions/v1/apps-orders"
   status = 200
   force = true
 
 [[redirects]]
   from = "/api/anypay"
-  to = "/.netlify/functions/anypay"
+  to = "https://cmcfwkfhyxfljpowbkpj.supabase.co/functions/v1/ap"
   status = 200
   force = true
 
