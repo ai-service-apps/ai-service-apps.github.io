@@ -9,6 +9,12 @@
   node_bundler = "esbuild"
 
 [[redirects]]
+  from = "/api/checkout"
+  to = "https://cmcfwkfhyxfljpowbkpj.supabase.co/functions/v1/apps-checkout"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/api/catalog"
   to = "https://cmcfwkfhyxfljpowbkpj.supabase.co/functions/v1/apps-orders"
   status = 200
