@@ -3,3 +3,4 @@
 /api/catalog https://cmcfwkfhyxfljpowbkpj.supabase.co/functions/v1/apps-orders 200!
 /api/anypay https://cmcfwkfhyxfljpowbkpj.supabase.co/functions/v1/ap 200!
 /api/checkout https://cmcfwkfhyxfljpowbkpj.supabase.co/functions/v1/apps-checkout 200!
+/api/payment-health https://cmcfwkfhyxfljpowbkpj.supabase.co/functions/v1/apps-anypay-api-check 200!
