@@ -9,6 +9,12 @@
   node_bundler = "esbuild"
 
 [[redirects]]
+  from = "/api/payment-health"
+  to = "https://cmcfwkfhyxfljpowbkpj.supabase.co/functions/v1/apps-anypay-api-check"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/api/checkout"
   to = "https://cmcfwkfhyxfljpowbkpj.supabase.co/functions/v1/apps-checkout"
   status = 200
