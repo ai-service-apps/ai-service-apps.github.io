@@ -2,3 +2,4 @@
 # Supabase remains source of truth. Callback is fail-closed; payments disabled.
 /api/catalog https://cmcfwkfhyxfljpowbkpj.supabase.co/functions/v1/apps-orders 200!
 /api/anypay https://cmcfwkfhyxfljpowbkpj.supabase.co/functions/v1/ap 200!
+/api/checkout https://cmcfwkfhyxfljpowbkpj.supabase.co/functions/v1/apps-checkout 200!
