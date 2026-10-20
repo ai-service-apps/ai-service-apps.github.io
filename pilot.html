@@ -37,6 +37,7 @@ a{color:#2e58ab}
 <div class="fine">Это реальный платёж на 500 ₽, не имитация. Доступ к приложению не выдаётся автоматически: сначала мы должны подтвердить транзакцию в AnyPay. Не вводите Apple Account на этой странице.</div>
 <label><input id="agree" type="checkbox" disabled> <span>Понимаю, что это реальная контрольная оплата 500 ₽, и готов(а) перейти к ней.</span></label>
 <button id="pay" disabled>Перейти к оплате 500 ₽</button>
+<button id="verify" type="button" disabled style="margin-top:12px;background:#eaf0fe;color:#2954a2">Проверить поступление в AnyPay</button>
 <p style="text-align:center"><a href="/">Вернуться в каталог</a></p>
 </section></main>
 <script>
@@ -44,6 +45,7 @@ a{color:#2e58ab}
 const target="/api/owner-pilot";
 const state=document.getElementById("state");
 const pay=document.getElementById("pay");
+const verify=document.getElementById("verify");
 const agree=document.getElementById("agree");
 const invite=document.getElementById("invite");
 let token="",authorized=false;
@@ -75,6 +77,7 @@ document.getElementById("start").addEventListener("click",async()=>{
   const x=await json("status");
   if(x.total_rub!==500||x.currency!=="RUB")throw Error("AMOUNT_UNEXPECTED");
   authorized=true;
+  verify.disabled=false;
   if(x.payment_verified){
    state.textContent="Заказ №"+x.merchant_order_no+" оплачен. Повторный платёж не нужен.";
    return;
@@ -82,6 +85,17 @@ document.getElementById("start").addEventListener("click",async()=>{
   state.textContent="Контрольный заказ №"+x.merchant_order_no+" создан. Можно перейти к реальной оплате 500 ₽.";
   agree.disabled=false;
  }catch(_){state.textContent="Секрет не распознан или Supabase ещё не сохранил его. Проверьте название ANYPAY_PILOT_PASSPHRASE и значение.";b.disabled=false;token="";}
+});
+verify.addEventListener("click",async()=>{
+ if(!authorized)return;
+ verify.disabled=true;state.textContent="Проверяем транзакцию непосредственно в AnyPay…";
+ try {
+  const x=await json("verify");
+  state.textContent=x.provider_payment_confirmed
+   ?"AnyPay подтвердил реальную оплату 500 ₽ для вашего заказа. Выдача приложения пока закрыта до финальной проверки."
+   :"Подтверждённой оплаты пока не найдено. Если вы только что платили, повторите проверку позже.";
+ }catch(_){state.textContent="Проверка временно недоступна. Не оплачивайте повторно, сначала выясним статус транзакции."}
+ finally{verify.disabled=false;}
 });
 agree.addEventListener("change",()=>{pay.disabled=!agree.checked||!authorized});
 pay.addEventListener("click",async()=>{
