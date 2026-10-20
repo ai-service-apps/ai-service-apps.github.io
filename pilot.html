@@ -104,7 +104,11 @@ verify.addEventListener("click",async()=>{
 agree.addEventListener("change",()=>{pay.disabled=!agree.checked||!authorized});
 pay.addEventListener("click",async()=>{
  if(!authorized||!agree.checked)return;
- pay.disabled=true;state.textContent="Подготавливаем подписанную ссылку AnyPay…";
+ const email=invoiceEmail.value.trim();
+ if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+  state.textContent="Введите email для оформления счёта AnyPay.";invoiceEmail.focus();return;
+ }
+ pay.disabled=true;state.textContent="Запрашиваем платёжную ссылку через API AnyPay…";
  try{
   const x=await json("invoice",{email});
   const u=new URL(x.payment_url);
