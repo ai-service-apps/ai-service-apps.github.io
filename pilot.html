@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer">
+<title>Apple Inside Apps · Закрытая проверка оплаты</title>
+<style>
+:root{color-scheme:light}*{box-sizing:border-box}body{margin:0;background:#f3f6fc;color:#16243d;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+main{max-width:540px;margin:9vh auto;padding:20px}.panel{background:#fff;border:1px solid #dfe6f3;border-radius:22px;padding:27px;box-shadow:0 12px 40px #12335d0b}
+.logo{display:inline-grid;place-items:center;width:48px;height:48px;border-radius:14px;color:#fff;background:#223c73;font-weight:900}
+h1{font-size:26px;line-height:1.2;margin:17px 0 10px}p{line-height:1.65;font-size:14px;color:#63728b}
+.price{font-weight:800;font-size:30px;margin:22px 0}.fine{font-size:12px;background:#fff7e8;border-radius:12px;padding:13px 15px;color:#765d2d}
+button{border:0;border-radius:12px;padding:15px 18px;width:100%;background:#285af0;color:#fff;font-size:15px;font-weight:750;cursor:pointer}
+button:disabled{background:#9baacf;cursor:not-allowed}
+label{display:flex;gap:11px;align-items:flex-start;font-size:13px;line-height:1.5;color:#4b5d7b;margin:18px 0}
+input[type=checkbox]{width:19px;height:19px;flex:none}
+.state{font-size:13px;color:#63728b;line-height:1.6;margin:15px 0}
+a{color:#2e58ab}
+</style></head><body>
+<main><section class="panel">
+<div class="logo">AI</div><h1>Контрольная оплата AnyPay</h1>
+<p>Закрытое испытание платежей Apple Inside Apps. Только для владельца проекта, без публичных продаж.</p>
+<div class="price">500 ₽</div>
+<p>Услуга: контрольный заказ на установку приложения для iPhone. Проверяем создание счёта, поступление платежа и защиту от повторной оплаты.</p>
+<div id="state" class="state" role="status">Проверяем приглашение…</div>
+<div class="fine">Это реальный платёж на 500 ₽, не имитация. Доступ к приложению не выдаётся автоматически: сначала мы должны подтвердить транзакцию в AnyPay. Не вводите Apple Account на этой странице.</div>
+<label><input id="agree" type="checkbox" disabled> <span>Понимаю, что это реальная контрольная оплата 500 ₽, и готов(а) перейти к ней.</span></label>
+<button id="pay" disabled>Перейти к оплате 500 ₽</button>
+<p style="text-align:center"><a href="/">Вернуться в каталог</a></p>
+</section></main>
+<script>
+"use strict";
+const target="/api/owner-pilot";
+const token=(location.hash||"").slice(1).trim();
+if(location.hash)history.replaceState(null,"",location.pathname+location.search);
+const state=document.getElementById("state");
+const btn=document.getElementById("pay");
+const agree=document.getElementById("agree");
+let authorized=false;
+const json=async(action)=>{
+ const r=await fetch(target,{method:"POST",headers:{"Content-Type":"application/json"},
+  cache:"no-store",referrerPolicy:"no-referrer",body:JSON.stringify({action,token})});
+ const x=await r.json();if(!r.ok||!x.ok)throw Error(x.error||"NETWORK_FAILURE");return x;
+};
+(async()=>{
+ if(!/^[a-f0-9]{64}$/.test(token)){state.textContent="Нет действительного приглашения. Страница недоступна.";return}
+ try{
+  const x=await json("status");
+  if(x.total_rub!==500||x.currency!=="RUB")throw Error("AMOUNT_UNEXPECTED");
+  if(x.payment_verified){state.textContent="Заказ №"+x.merchant_order_no+" отмечен оплаченным. Повторное списание не требуется.";return}
+  state.textContent="Заказ №"+x.merchant_order_no+" · сумма 500 ₽. Можно перейти на защищённую страницу AnyPay.";
+  authorized=true;agree.disabled=false;
+ }catch(_){state.textContent="Приглашение недоступно или срок действия завершён."}
+})();
+agree.addEventListener("change",()=>{btn.disabled=!agree.checked||!authorized});
+btn.addEventListener("click",async()=>{
+ if(!authorized||!agree.checked)return;
+ btn.disabled=true;state.textContent="Подготавливаем ссылку AnyPay…";
+ try{
+  const x=await json("invoice");
+  const u=new URL(x.payment_url);
+  if(u.origin!=="https://anypay.io"||u.pathname!=="/merchant"||x.total_rub!==500)throw Error("CHECKOUT_HOST_INVALID");
+  state.textContent="Переходим на страницу оплаты…";
+  location.assign(u.toString());
+ }catch(_){state.textContent="Не удалось подготовить ссылку. Деньги не списаны. Повторите попытку позже.";btn.disabled=false}
+});
+</script></body></html>
