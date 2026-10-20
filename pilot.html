@@ -14,7 +14,7 @@ button{border:0;border-radius:12px;padding:15px 18px;width:100%;background:#285a
 button:disabled{background:#9baacf;cursor:not-allowed}
 label{display:flex;gap:11px;align-items:flex-start;font-size:13px;line-height:1.5;color:#4b5d7b;margin:18px 0}
 input[type=checkbox]{width:19px;height:19px;flex:none}
-input[type=password]{border:1px solid #cad7ed;border-radius:10px;padding:13px;width:100%;font:inherit}
+input[type=password],input[type=email]{border:1px solid #cad7ed;border-radius:10px;padding:13px;width:100%;font:inherit}
 .code-tools{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 15px}
 .code-tools button{background:#eaf0fe;color:#2b55a5;font-size:12px;padding:12px}
 
@@ -35,6 +35,9 @@ a{color:#2e58ab}
 <button id="start" type="button" style="margin-bottom:12px">Открыть контрольный заказ</button>
 <div id="state" class="state" role="status">Введите личный секрет, сохранённый в Supabase. Платёж пока не создаётся.</div>
 <div class="fine">Это реальный платёж на 500 ₽, не имитация. Доступ к приложению не выдаётся автоматически: сначала мы должны подтвердить транзакцию в AnyPay. Не вводите Apple Account на этой странице.</div>
+<label for="invoiceEmail" style="display:block;margin:16px 0 4px">Email для счёта AnyPay</label>
+<input id="invoiceEmail" type="email" inputmode="email" autocomplete="email" placeholder="example@mail.ru" maxlength="254">
+<p>Нужен платёжной системе для выставления контрольного счёта. Почту не сохраняем в нашем каталоге.</p>
 <label><input id="agree" type="checkbox" disabled> <span>Понимаю, что это реальная контрольная оплата 500 ₽, и готов(а) перейти к ней.</span></label>
 <button id="pay" disabled>Перейти к оплате 500 ₽</button>
 <button id="verify" type="button" disabled style="margin-top:12px;background:#eaf0fe;color:#2954a2">Проверить поступление в AnyPay</button>
@@ -48,10 +51,11 @@ const pay=document.getElementById("pay");
 const verify=document.getElementById("verify");
 const agree=document.getElementById("agree");
 const invite=document.getElementById("invite");
+const invoiceEmail=document.getElementById("invoiceEmail");
 let token="",authorized=false;
-const json=async(action)=>{
+const json=async(action,fields={})=>{
  const r=await fetch(target,{method:"POST",headers:{"Content-Type":"application/json"},
-  cache:"no-store",referrerPolicy:"no-referrer",body:JSON.stringify({action,token})});
+  cache:"no-store",referrerPolicy:"no-referrer",body:JSON.stringify({action,token,...fields})});
  const x=await r.json();if(!r.ok||!x.ok)throw Error(x.error||"NETWORK_FAILURE");return x;
 };
 document.getElementById("generate").addEventListener("click",()=>{
@@ -102,11 +106,11 @@ pay.addEventListener("click",async()=>{
  if(!authorized||!agree.checked)return;
  pay.disabled=true;state.textContent="Подготавливаем подписанную ссылку AnyPay…";
  try{
-  const x=await json("invoice");
+  const x=await json("invoice",{email});
   const u=new URL(x.payment_url);
-  if(u.origin!=="https://anypay.io"||u.pathname!=="/merchant"||x.total_rub!==500)throw Error("CHECKOUT_HOST_INVALID");
+  if(u.origin!=="https://anypay.io"||x.total_rub!==500||u.username||u.password)throw Error("CHECKOUT_HOST_INVALID");
   state.textContent="Переходим на сайт AnyPay…";
   location.assign(u.toString());
- }catch(_){state.textContent="Не удалось подготовить ссылку. Деньги не списаны.";pay.disabled=false}
+ }catch(err){state.textContent="Платёжная ссылка не создана: "+String(err.message||"CHECKOUT_ERROR")+". Деньги не списаны. Если AnyPay вернул ошибку, сообщите её код.";pay.disabled=false}
 });
 </script></body></html>
