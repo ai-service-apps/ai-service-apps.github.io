@@ -56,7 +56,10 @@ let token="",authorized=false;
 const json=async(action,fields={})=>{
  const r=await fetch(target,{method:"POST",headers:{"Content-Type":"application/json"},
   cache:"no-store",referrerPolicy:"no-referrer",body:JSON.stringify({action,token,...fields})});
- const x=await r.json();if(!r.ok||!x.ok)throw Error(x.error||"NETWORK_FAILURE");return x;
+ const x=await r.json();
+ if(!r.ok||!x.ok)throw Error((x.error||"NETWORK_FAILURE")+
+   (x.provider_error_code?(" (AnyPay "+x.provider_error_code+")"):""));
+ return x;
 };
 document.getElementById("generate").addEventListener("click",()=>{
  const bytes=crypto.getRandomValues(new Uint8Array(32));
