@@ -14,6 +14,10 @@ button{border:0;border-radius:12px;padding:15px 18px;width:100%;background:#285a
 button:disabled{background:#9baacf;cursor:not-allowed}
 label{display:flex;gap:11px;align-items:flex-start;font-size:13px;line-height:1.5;color:#4b5d7b;margin:18px 0}
 input[type=checkbox]{width:19px;height:19px;flex:none}
+input[type=password]{border:1px solid #cad7ed;border-radius:10px;padding:13px;width:100%;font:inherit}
+.code-tools{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 15px}
+.code-tools button{background:#eaf0fe;color:#2b55a5;font-size:12px;padding:12px}
+
 .state{font-size:13px;color:#63728b;line-height:1.6;margin:15px 0}
 a{color:#2e58ab}
 </style></head><body>
@@ -22,7 +26,14 @@ a{color:#2e58ab}
 <p>Закрытое испытание платежей Apple Inside Apps. Только для владельца проекта, без публичных продаж.</p>
 <div class="price">500 ₽</div>
 <p>Услуга: контрольный заказ на установку приложения для iPhone. Проверяем создание счёта, поступление платежа и защиту от повторной оплаты.</p>
-<div id="state" class="state" role="status">Проверяем приглашение…</div>
+<div class="fine" style="margin-bottom:12px">Для закрытого теста сначала создайте собственный 64-символьный секрет, сохраните его в Supabase → Edge Functions → Secrets под именем <code>ANYPAY_PILOT_PASSPHRASE</code>. API-ключи AnyPay не изменяйте.</div>
+<input id="invite" type="password" autocomplete="off" spellcheck="false" placeholder="Личный секрет из Supabase" aria-label="Личный секрет">
+<div class="code-tools">
+ <button id="generate" type="button">Создать секрет</button>
+ <button id="copy" type="button">Копировать секрет</button>
+</div>
+<button id="start" type="button" style="margin-bottom:12px">Открыть контрольный заказ</button>
+<div id="state" class="state" role="status">Введите личный секрет, сохранённый в Supabase. Платёж пока не создаётся.</div>
 <div class="fine">Это реальный платёж на 500 ₽, не имитация. Доступ к приложению не выдаётся автоматически: сначала мы должны подтвердить транзакцию в AnyPay. Не вводите Apple Account на этой странице.</div>
 <label><input id="agree" type="checkbox" disabled> <span>Понимаю, что это реальная контрольная оплата 500 ₽, и готов(а) перейти к ней.</span></label>
 <button id="pay" disabled>Перейти к оплате 500 ₽</button>
@@ -31,37 +42,57 @@ a{color:#2e58ab}
 <script>
 "use strict";
 const target="/api/owner-pilot";
-const token=(location.hash||"").slice(1).trim();
-if(location.hash)history.replaceState(null,"",location.pathname+location.search);
 const state=document.getElementById("state");
-const btn=document.getElementById("pay");
+const pay=document.getElementById("pay");
 const agree=document.getElementById("agree");
-let authorized=false;
+const invite=document.getElementById("invite");
+let token="",authorized=false;
 const json=async(action)=>{
  const r=await fetch(target,{method:"POST",headers:{"Content-Type":"application/json"},
   cache:"no-store",referrerPolicy:"no-referrer",body:JSON.stringify({action,token})});
  const x=await r.json();if(!r.ok||!x.ok)throw Error(x.error||"NETWORK_FAILURE");return x;
 };
-(async()=>{
- if(!/^[a-f0-9]{64}$/.test(token)){state.textContent="Нет действительного приглашения. Страница недоступна.";return}
+document.getElementById("generate").addEventListener("click",()=>{
+ const bytes=crypto.getRandomValues(new Uint8Array(32));
+ invite.value=Array.from(bytes,b=>b.toString(16).padStart(2,"0")).join("");
+ state.textContent="Секрет создан. Нажмите «Копировать секрет», затем сохраните его как ANYPAY_PILOT_PASSPHRASE в Supabase. После сохранения вернитесь сюда и откройте заказ.";
+});
+document.getElementById("copy").addEventListener("click",async()=>{
+ const value=invite.value.trim();
+ if(!/^[a-f0-9]{64}$/.test(value)){state.textContent="Сначала создайте секрет.";return}
+ try{await navigator.clipboard.writeText(value);state.textContent="Секрет скопирован. Вставьте его в Value для ANYPAY_PILOT_PASSPHRASE в Supabase."}
+ catch(_){invite.focus();invite.select();state.textContent="Скопируйте выделенное значение вручную."}
+});
+document.getElementById("start").addEventListener("click",async()=>{
+ if(authorized)return;
+ const t=invite.value.trim().toLowerCase();
+ if(!/^[a-f0-9]{64}$/.test(t)){state.textContent="Введите 64-символьный секрет, сохранённый в Supabase.";return}
+ token=t;
+ const b=document.getElementById("start");b.disabled=true;
+ state.textContent="Проверяем секрет и открываем контрольный заказ…";
  try{
+  await json("start");
   const x=await json("status");
   if(x.total_rub!==500||x.currency!=="RUB")throw Error("AMOUNT_UNEXPECTED");
-  if(x.payment_verified){state.textContent="Заказ №"+x.merchant_order_no+" отмечен оплаченным. Повторное списание не требуется.";return}
-  state.textContent="Заказ №"+x.merchant_order_no+" · сумма 500 ₽. Можно перейти на защищённую страницу AnyPay.";
-  authorized=true;agree.disabled=false;
- }catch(_){state.textContent="Приглашение недоступно или срок действия завершён."}
-})();
-agree.addEventListener("change",()=>{btn.disabled=!agree.checked||!authorized});
-btn.addEventListener("click",async()=>{
+  authorized=true;
+  if(x.payment_verified){
+   state.textContent="Заказ №"+x.merchant_order_no+" оплачен. Повторный платёж не нужен.";
+   return;
+  }
+  state.textContent="Контрольный заказ №"+x.merchant_order_no+" создан. Можно перейти к реальной оплате 500 ₽.";
+  agree.disabled=false;
+ }catch(_){state.textContent="Секрет не распознан или Supabase ещё не сохранил его. Проверьте название ANYPAY_PILOT_PASSPHRASE и значение.";b.disabled=false;token="";}
+});
+agree.addEventListener("change",()=>{pay.disabled=!agree.checked||!authorized});
+pay.addEventListener("click",async()=>{
  if(!authorized||!agree.checked)return;
- btn.disabled=true;state.textContent="Подготавливаем ссылку AnyPay…";
+ pay.disabled=true;state.textContent="Подготавливаем подписанную ссылку AnyPay…";
  try{
   const x=await json("invoice");
   const u=new URL(x.payment_url);
   if(u.origin!=="https://anypay.io"||u.pathname!=="/merchant"||x.total_rub!==500)throw Error("CHECKOUT_HOST_INVALID");
-  state.textContent="Переходим на страницу оплаты…";
+  state.textContent="Переходим на сайт AnyPay…";
   location.assign(u.toString());
- }catch(_){state.textContent="Не удалось подготовить ссылку. Деньги не списаны. Повторите попытку позже.";btn.disabled=false}
+ }catch(_){state.textContent="Не удалось подготовить ссылку. Деньги не списаны.";pay.disabled=false}
 });
 </script></body></html>
