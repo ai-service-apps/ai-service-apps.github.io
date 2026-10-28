@@ -32,7 +32,7 @@ h1{font-size:30px;line-height:1.15;letter-spacing:-.8px;margin:18px 0 12px}h2{fo
 <section id="installation">
 <h2>1. Установите приложение</h2>
 <p>Откройте эту страницу в Safari на iPhone. Нажмите кнопку и подтвердите установку, если iOS покажет запрос. Дождитесь появления значка на экране «Домой».</p>
-<a id="install-button" class="btn" href="itms-services://?action=download-manifest&amp;url=https%3A%2F%2Fraw.githubusercontent.com%2Fai-service-apps%2Fapps%2Fmain%2FAppleID1-Karen%2Fonline.plist" rel="noreferrer" hidden>Установить бесплатно</a>
+<a id="install-button" class="btn" href="itms-services://?action=download-manifest&amp;url=https%3A%2F%2Fraw.githubusercontent.com%2Fai-service-apps%2Fapps%2Fmain%2FAppleID1-Karen%2Fonline.plist" target="_blank" rel="noopener noreferrer" hidden>Установить бесплатно</a>
 <button id="open-browser" class="btn secondary" type="button" hidden>Если не устанавливается — открыть в браузере</button>
 <div id="device-note" class="notice">Для установки откройте эту страницу в Safari на iPhone. На компьютере установить приложение для iOS нельзя.</div>
 <button id="copy-link" class="btn secondary" type="button">Скопировать ссылку для iPhone</button>
@@ -76,7 +76,7 @@ document.getElementById("open-browser").addEventListener("click",function(){
   state.textContent="Страница открывается в браузере. Если она осталась внутри Telegram, скопируйте ссылку и вставьте её в Safari.";
  }catch(_){state.textContent="Скопируйте ссылку кнопкой ниже и откройте её в Safari на iPhone.";}
 });
-button.addEventListener("click",function(){state.textContent="Запрос передан iOS. Подтвердите установку, если появился запрос, и дождитесь значка приложения. Затем переходите к проверке запуска.";});
+button.addEventListener("click",function(){state.textContent="Запрашиваем открытие установки. Если Telegram покажет подтверждение открытия ссылки, подтвердите его. Дождитесь запроса iOS и подтвердите установку. Нажатие кнопки само по себе не подтверждает, что установка началась.";});
 document.getElementById("copy-link").addEventListener("click",async function(){
  const url=installPage;
  try{await navigator.clipboard.writeText(url);state.textContent="Ссылка скопирована. Отправьте её себе и откройте в Safari на iPhone.";}
