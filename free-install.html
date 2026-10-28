@@ -7,6 +7,7 @@
 <meta name="theme-color" content="#f5f7fc">
 <meta name="description" content="Бесплатная установка СберБанк Онлайн на iPhone: кнопка установки и инструкция по запуску.">
 <title>Установить бесплатно — Apple Inside Apps</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 :root{--bg:#f5f7fc;--ink:#17223a;--muted:#61718d;--blue:#2859f5;--line:#e2e8f3}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:var(--ink)}
@@ -32,6 +33,7 @@ h1{font-size:30px;line-height:1.15;letter-spacing:-.8px;margin:18px 0 12px}h2{fo
 <h2>1. Установите приложение</h2>
 <p>Откройте эту страницу в Safari на iPhone. Нажмите кнопку и подтвердите установку, если iOS покажет запрос. Дождитесь появления значка на экране «Домой».</p>
 <a id="install-button" class="btn" href="itms-services://?action=download-manifest&amp;url=https%3A%2F%2Fraw.githubusercontent.com%2Fai-service-apps%2Fapps%2Fmain%2FAppleID1-Karen%2Fonline.plist" rel="noreferrer" hidden>Установить бесплатно</a>
+<button id="open-browser" class="btn" type="button" hidden>Открыть установку в браузере</button>
 <div id="device-note" class="notice">Для установки откройте эту страницу в Safari на iPhone. На компьютере установить приложение для iOS нельзя.</div>
 <button id="copy-link" class="btn secondary" type="button">Скопировать ссылку для iPhone</button>
 <div id="state" class="notice" role="status" aria-live="polite">Установка ещё не запускалась.</div>
@@ -56,11 +58,26 @@ h1{font-size:30px;line-height:1.15;letter-spacing:-.8px;margin:18px 0 12px}h2{fo
 (function(){
 "use strict";
 const button=document.getElementById("install-button"),state=document.getElementById("state");
+const tg=window.Telegram&&window.Telegram.WebApp;
+const inTelegram=Boolean(tg&&(tg.initData||(tg.platform&&tg.platform!=="unknown")));
+const installPage="https://ai-service-apps.github.io/free-install.html?app=sber";
 const ios=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
-if(ios){button.hidden=false;document.getElementById("device-note").textContent="Если страница открыта внутри Telegram или другого приложения, откройте её в Safari на iPhone.";state.textContent="Нажмите «Установить бесплатно» и подтвердите запрос iOS.";}
+if(inTelegram){
+ try{tg.ready()}catch(_){}
+ document.getElementById("open-browser").hidden=false;
+ document.getElementById("device-note").textContent="Вы открыли установку внутри Telegram. Перейдите в браузер; на iPhone откройте страницу в Safari, затем нажмите «Установить бесплатно».";
+ state.textContent="Сначала откройте страницу установки в браузере.";
+}else if(ios){button.hidden=false;document.getElementById("device-note").textContent="Если страница открыта внутри другого приложения, откройте её в Safari на iPhone.";state.textContent="Нажмите «Установить бесплатно» и подтвердите запрос iOS.";}
+document.getElementById("open-browser").addEventListener("click",function(){
+ try{
+  if(!tg||typeof tg.openLink!=="function")throw Error("NO_BROWSER_BRIDGE");
+  tg.openLink(installPage,{try_instant_view:false});
+  state.textContent="Страница открывается в браузере. Если она осталась внутри Telegram, скопируйте ссылку и вставьте её в Safari.";
+ }catch(_){state.textContent="Скопируйте ссылку кнопкой ниже и откройте её в Safari на iPhone.";}
+});
 button.addEventListener("click",function(){state.textContent="Запрос передан iOS. Подтвердите установку, если появился запрос, и дождитесь значка приложения. Затем переходите к проверке запуска.";});
 document.getElementById("copy-link").addEventListener("click",async function(){
- const url=new URL("./free-install.html?app=sber",location.href).href;
+ const url=installPage;
  try{await navigator.clipboard.writeText(url);state.textContent="Ссылка скопирована. Отправьте её себе и откройте в Safari на iPhone.";}
  catch(_){state.textContent="Скопируйте адрес из строки браузера и откройте его в Safari на iPhone: "+url;}
 });

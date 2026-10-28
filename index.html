@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#f5f7fc">
 <meta name="description" content="Apple Inside Apps — выбор приложений, оплата, установка и активация на iPhone.">
 <title>Apple Inside Apps — приложения для iPhone</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 :root{--bg:#f5f7fc;--ink:#17223a;--muted:#76839c;--blue:#2859f5;--line:#e2e8f3}
 *{box-sizing:border-box}
@@ -187,6 +188,9 @@ const esc=v=>String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"
 const icons={sber:"С",alfa:"А",tbank:"Т"};
 let catalog=[],flow="download";
 const el=id=>document.getElementById(id);
+const tg=window.Telegram&&window.Telegram.WebApp;
+const inTelegram=Boolean(tg&&(tg.initData||(tg.platform&&tg.platform!=="unknown")));
+if(inTelegram){try{tg.ready();tg.expand()}catch(_){}}
 
 let privateToken="";
 try{
@@ -283,7 +287,16 @@ function renderFinish(){
 }
 el("free-install").onclick=()=>{
   const selected=chosen();
-  if(selected.length===1&&selected[0].slug==="sber")location.href="./free-install.html?app=sber";
+  if(selected.length!==1||selected[0].slug!=="sber")return;
+  const url="https://ai-service-apps.github.io/free-install.html?app=sber";
+  if(inTelegram&&typeof tg.openLink==="function"){
+    try{
+      tg.openLink(url,{try_instant_view:false});
+      el("free-note").textContent="Страница установки открывается в браузере. На iPhone используйте Safari. Если переход не произошёл, откройте https://ai-service-apps.github.io/free-install.html?app=sber в Safari.";
+      return;
+    }catch(_){}
+  }
+  location.href=url;
 };
 el("preview").onclick=()=>{
   if(!chosen().length)return;
